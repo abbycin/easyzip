@@ -39,7 +39,9 @@ func toSlash(p string) string {
 
 func absPath(p string) (string, error) {
 	r, e := filepath.Abs(p)
-	if e != nil { return "", e }
+	if e != nil {
+		return "", e
+	}
 	return toSlash(r), e
 }
 
@@ -65,12 +67,16 @@ func (z *Zip) initialize(verbose bool) {
 // `dst` manually.
 func (z *Zip) ZipFile(src []string, dst string) error {
 	abs_dst, e := absPath(dst)
-	if e != nil { return e }
+	if e != nil {
+		return e
+	}
 
 	var abs_src []string
 	for _, s := range src {
 		t, e := absPath(s)
-		if e != nil { return e}
+		if e != nil {
+			return e
+		}
 		abs_src = append(abs_src, t)
 	}
 	o, e := os.Create(abs_dst)
@@ -86,13 +92,14 @@ func (z *Zip) ZipFile(src []string, dst string) error {
 	}()
 
 	for _, f := range abs_src {
-		e = addFiles(w, f, basePath(f), z.progress)
+		e = addFiles(w, f, abs_dst, basePath(f), z.progress)
 		if e != nil {
 			return e
 		}
 	}
 	return nil
 }
+
 // create a zip file from given directory.
 // when overwrite enabled, it will delete dst first (if exist), or else return a dst already existed error.
 // when create_root enabled, it will create a directory named src and put all contents into it.
@@ -130,15 +137,19 @@ func (z *Zip) ZipDir(src, dst string, overwrite, create_root bool) error {
 	w := zip.NewWriter(f)
 	dst = ""
 	if create_root {
-		dst = basePath(src)
+		dst = basePath(abs_src)
 	}
-	err := addFiles(w, src, dst, z.progress)
+	err := addFiles(w, abs_src, abs_dst, dst, z.progress)
 	_ = w.Close()
 	_ = f.Close()
 	return err
 }
 
-func addFiles(z *zip.Writer, src, dst string, cb func(l string)) error {
+func addFiles(z *zip.Writer, src, self, dst string, cb func(l string)) error {
+	if src == self {
+		cb("skip self")
+		return nil
+	}
 	i, e := os.Stat(src)
 	if e != nil {
 		return e
@@ -156,7 +167,7 @@ func addFiles(z *zip.Writer, src, dst string, cb func(l string)) error {
 			} else {
 				tmp = dst + "/" + item.Name()
 			}
-			e = addFiles(z, src+"/"+item.Name(), tmp, cb)
+			e = addFiles(z, src + "/" +item.Name(), self, tmp, cb)
 			if e != nil {
 				return e
 			}
@@ -195,7 +206,9 @@ func (z *Zip) Unzip(src, dst string) error {
 	} else {
 		abs_dst, e = absPath(dst)
 	}
-	if e != nil { return e }
+	if e != nil {
+		return e
+	}
 
 	r, e := zip.OpenReader(abs_src)
 	if e != nil {

@@ -20,7 +20,7 @@ func main() {
 	src, dst := os.Args[2], os.Args[3]
 	var err error
 	if cmd == "zip" {
-		err = z.ZipDir(src, dst, true, false)
+		err = z.ZipDir(src, dst, true, true)
 	} else if cmd == "unzip" {
 		err = z.Unzip(src, dst)
 	} else if cmd == "zipfiles" {
