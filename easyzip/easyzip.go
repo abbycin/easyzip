@@ -62,10 +62,11 @@ func (z *Zip) initialize(verbose bool) {
 }
 
 // create a zip file named `dst` from a list of items
-// the items can be either file or directory. when error
-// occurred, it simply return that error, caller may delete
+// the items can be either files or directories.
+// when overwrite is enabled, the dst will be delete first.
+// when error occurred, it simply return that error, caller may delete
 // `dst` manually.
-func (z *Zip) ZipFile(src []string, dst string) error {
+func (z *Zip) ZipFile(src []string, dst string, overwrite bool) error {
 	abs_dst, e := absPath(dst)
 	if e != nil {
 		return e
@@ -78,6 +79,18 @@ func (z *Zip) ZipFile(src []string, dst string) error {
 			return e
 		}
 		abs_src = append(abs_src, t)
+	}
+	_, e = os.Stat(abs_dst)
+	if e != nil {
+		if !os.IsNotExist(e) {
+			return e
+		}
+	}
+
+	if overwrite {
+		_ = os.RemoveAll(abs_dst)
+	} else {
+		return fmt.Errorf("%s exist, skip", dst)
 	}
 	o, e := os.Create(abs_dst)
 	if e != nil {
@@ -167,7 +180,7 @@ func addFiles(z *zip.Writer, src, self, dst string, cb func(l string)) error {
 			} else {
 				tmp = dst + "/" + item.Name()
 			}
-			e = addFiles(z, src + "/" +item.Name(), self, tmp, cb)
+			e = addFiles(z, src+"/"+item.Name(), self, tmp, cb)
 			if e != nil {
 				return e
 			}

@@ -25,7 +25,7 @@ func main() {
 		err = z.Unzip(src, dst)
 	} else if cmd == "zipfiles" {
 		dst = os.Args[2]
-		err = z.ZipFile(os.Args[3:], os.Args[2])
+		err = z.ZipFile(os.Args[3:], os.Args[2], true)
 	} else {
 		help()
 	}
